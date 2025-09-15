@@ -17,7 +17,6 @@
 	<settings pass="generalize"></settings>
 	<settings pass="specialize">
 		<component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
-			<ComputerName>nano11</ComputerName>
 		</component>
 		<component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
 			<RunSynchronous>
@@ -57,7 +56,6 @@
 			<AutoLogon>
 				<Username>Administrator</Username>
 				<Enabled>true</Enabled>
-				<LogonCount>1</LogonCount>
 				<Password>
 					<Value></Value>
 					<PlainText>true</PlainText>
@@ -260,4 +258,5 @@ $scripts = @(
 } *&gt;&amp;1 &gt;&gt; "C:\Windows\Setup\Scripts\FirstLogon.log";
 		</File>
 	</Extensions>
+
 </unattend>
