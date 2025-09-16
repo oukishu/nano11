@@ -19,6 +19,7 @@ jobs:
           Write-Host "Downloading Windows PE add-on for the ADK..."
           Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2289981" -OutFile "adkwinpesetup.exe"
 
+      # ... (This is your existing install step)
       - name: Install ADK and WinPE Add-on
         shell: cmd
         run: |
@@ -28,17 +29,32 @@ jobs:
           echo "Installing Windows PE add-on..."
           start /wait adkwinpesetup.exe /quiet /norestart
 
-      - name: Find ADK Installation Path
+      # ADD THIS NEW STEP TO DUMP THE LOGS
+      - name: Show ADK Install Logs
+        if: always() # This ensures the step runs even if the previous one failed
+        shell: pwsh
+        run: |
+          Write-Host "Searching for ADK installation logs..."
+          $logFile = Get-ChildItem -Path $env:TEMP -Filter "ADK_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($logFile) {
+            Write-Host "--- Displaying log file: $($logFile.FullName) ---"
+            Get-Content -Path $logFile.FullName
+            Write-Host "--- End of log file ---"
+          } else {
+            Write-Host "ADK log file not found in $env:TEMP."
+          }
+
+      - name: Find ADK Installation Path (Full Scan)
         shell: cmd
         run: |
-          echo "Searching for DandISetEnv.bat..."
-          dir /s /b "C:\Program Files (x86)\Windows Kits\DandISetEnv.bat"
+          echo "Searching entire C: drive for DandISetEnv.bat..."
+          dir /s /b C:\DandISetEnv.bat
 
       - name: Create WinPE ISO
         shell: cmd
         run: |
           echo "Setting up Deployment and Imaging Tools Environment..."
-          call "C:\Program Files (x86)\Windows Kits\11\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
+          call "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
           
           echo "Creating WinPE working directory for amd64..."
           copype.cmd amd64 C:\WinPE_amd64
