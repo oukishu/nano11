@@ -114,14 +114,14 @@ $packagePatterns = @(
     "OpenSSH-Client-Package~",
 
     # --- Language & Input Features (Assumes primary language only) ---
-    "Microsoft-Windows-LanguageFeatures-Handwriting-$languageCode-Package~",
-    "Microsoft-Windows-LanguageFeatures-OCR-$languageCode-Package~",
-    "Microsoft-Windows-LanguageFeatures-Speech-$languageCode-Package~",
-    "Microsoft-Windows-LanguageFeatures-TextToSpeech-$languageCode-Package~",
-    "*IME-ja-jp*",
-    "*IME-ko-kr*",
-    "*IME-zh-cn*",
-    "*IME-zh-tw*",
+    # "Microsoft-Windows-LanguageFeatures-Handwriting-$languageCode-Package~",
+    # "Microsoft-Windows-LanguageFeatures-OCR-$languageCode-Package~",
+    # "Microsoft-Windows-LanguageFeatures-Speech-$languageCode-Package~",
+    # "Microsoft-Windows-LanguageFeatures-TextToSpeech-$languageCode-Package~",
+    # "*IME-ja-jp*",
+    # "*IME-ko-kr*",
+    # "*IME-zh-cn*",
+    # "*IME-zh-tw*",
 
     # --- Core OS Features (Removal is aggressive and will break functionality) ---
     "Windows-Defender-Client-Package~",
@@ -564,4 +564,5 @@ else {
     exit
 
 }
+
 
