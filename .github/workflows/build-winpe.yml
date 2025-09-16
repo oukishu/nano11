@@ -48,7 +48,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Searching entire C: drive for DandISetEnv.bat..."
-          Get-ChildItem -Path "C:\ADK" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          Get-ChildItem -Path "C:\ADK\Assessment and Deployment Kit\Deployment Tools" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 
       - name: Create WinPE ISO (PowerShell)
         shell: pwsh
