@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Installing Windows ADK (Deployment Tools only)..."
-          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList "/quiet /norestart /features Feature_DeploymentTools"
+          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList '/quiet /norestart /features Feature_DeploymentTools /installpath "C:\ADK"'
           
           Write-Host "Installing Windows PE add-on..."
           Start-Process -FilePath "adkwinpesetup.exe" -Wait -ArgumentList "/quiet /norestart"
@@ -48,14 +48,14 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Searching entire C: drive for DandISetEnv.bat..."
-          Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          Get-ChildItem -Path "C:\ADK" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 
       - name: Create WinPE ISO (PowerShell)
         shell: pwsh
         run: |
           Write-Host "Setting up Deployment and Imaging Tools Environment..."
           # The PowerShell way to make tools available is to add their directory to the PATH.
-          $adkToolsPath = "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools"
+          $adkToolsPath = "C:\ADK\Assessment and Deployment Kit\Deployment Tools"
           $env:Path = "$adkToolsPath;$env:Path"
           
           Write-Host "Creating WinPE working directory for amd64..."
