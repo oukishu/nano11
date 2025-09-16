@@ -1,0 +1,47 @@
+name: Build Windows PE (amd64) ISO
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download ADK and WinPE Add-on
+        shell: pwsh
+        run: |
+          Write-Host "Downloading Windows ADK..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2289980" -OutFile "adksetup.exe"
+          
+          Write-Host "Downloading Windows PE add-on for the ADK..."
+          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2289981" -OutFile "adkwinpesetup.exe"
+
+      - name: Install ADK and WinPE Add-on
+        shell: cmd
+        run: |
+          echo "Installing Windows ADK (Deployment Tools only)..."
+          start /wait adksetup.exe /quiet /norestart /features Feature_DeploymentTools
+          
+          echo "Installing Windows PE add-on..."
+          start /wait adkwinpesetup.exe /quiet /norestart
+
+      - name: Create WinPE ISO
+        shell: cmd
+        run: |
+          echo "Setting up Deployment and Imaging Tools Environment..."
+          call "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
+          
+          echo "Creating WinPE working directory for amd64..."
+          copype.cmd amd64 C:\WinPE_amd64
+          
+          echo "Creating WinPE ISO..."
+          MakeWinPEMedia /iso C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
+
+      - name: Upload WinPE ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinPE-ISO-amd64
+          path: C:\WinPE_amd64\WinPE_amd64.iso
