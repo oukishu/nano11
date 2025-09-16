@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Installing Windows ADK (Deployment Tools only)..."
-          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList '/quiet /norestart /features Feature_DeploymentTools /installpath "C:\ADK"'
+          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList "/quiet /norestart /features Feature_DeploymentTools /installpath `"C:\ADK`""
           
           Write-Host "Installing Windows PE add-on..."
           Start-Process -FilePath "adkwinpesetup.exe" -Wait -ArgumentList "/quiet /norestart"
@@ -49,6 +49,7 @@ jobs:
         run: |
           Write-Host "Searching entire C: drive for DandISetEnv.bat..."
           Get-ChildItem -Path "C:\ADK\Assessment and Deployment Kit\Deployment Tools" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
+          Get-ChildItem -Path "C:\ADK"
 
       - name: Create WinPE ISO (PowerShell)
         shell: pwsh
