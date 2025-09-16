@@ -21,13 +21,13 @@ jobs:
 
       # ... (This is your existing install step)
       - name: Install ADK and WinPE Add-on
-        shell: cmd
+        shell: pwsh
         run: |
-          echo "Installing Windows ADK (Deployment Tools only)..."
-          start /wait adksetup.exe /quiet /norestart /features Feature_DeploymentTools
+          Write-Host "Installing Windows ADK (Deployment Tools only)..."
+          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList "/quiet /norestart /features Feature_DeploymentTools"
           
-          echo "Installing Windows PE add-on..."
-          start /wait adkwinpesetup.exe /quiet /norestart
+          Write-Host "Installing Windows PE add-on..."
+          Start-Process -FilePath "adkwinpesetup.exe" -Wait -ArgumentList "/quiet /norestart"
 
       # ADD THIS NEW STEP TO DUMP THE LOGS
       - name: Show ADK Install Logs
@@ -45,10 +45,10 @@ jobs:
           }
 
       - name: Find ADK Installation Path (Full Scan)
-        shell: cmd
+        shell: pwsh
         run: |
-          echo "Searching entire C: drive for DandISetEnv.bat..."
-          dir /s /b C:\DandISetEnv.bat
+          Write-Host "Searching entire C: drive for DandISetEnv.bat..."
+          Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
 
       - name: Create WinPE ISO
         shell: cmd
