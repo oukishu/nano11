@@ -1,3 +1,4 @@
+# Set-ExecutionPolicy Bypass -Scope Process
 if ((Get-ExecutionPolicy) -eq 'Restricted') {
     Write-Host "Your current PowerShell Execution Policy is set to Restricted, which prevents scripts from running. Do you want to change it to RemoteSigned? (yes/no)"
     $response = Read-Host
@@ -564,5 +565,6 @@ else {
     exit
 
 }
+
 
 
