@@ -1,73 +1,62 @@
-name: Build Windows PE (amd64) ISO
+name: Build and Release Windows PE ISO
+
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 支持手动点击运行
 
 jobs:
-  build:
-    runs-on: windows-2022
+  build-pe:
+    runs-on: windows-latest
+    permissions:
+      contents: write # 发布 Release 权限
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download ADK and WinPE Add-on
-        shell: pwsh
+      - name: Download & Install Windows ADK and WinPE Addon
+        shell: powershell
         run: |
-          Write-Host "Downloading Windows ADK..."
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2289980" -OutFile "adksetup.exe"
-          
-          Write-Host "Downloading Windows PE add-on for the ADK..."
-          Invoke-WebRequest -Uri "https://go.microsoft.com/fwlink/?linkid=2289981" -OutFile "adkwinpesetup.exe"
+          Write-Host "Downloading ADK & WinPE Addon..."
+          $adkUrl = "https://go.microsoft.com/fwlink/?linkid=2271337"
+          $winpeUrl = "https://go.microsoft.com/fwlink/?linkid=2271338"
 
-      # ... (This is your existing install step)
-      - name: Install ADK and WinPE Add-on
-        shell: pwsh
+          Invoke-WebRequest -Uri $adkUrl -OutFile "adksetup.exe"
+          Invoke-WebRequest -Uri $winpeUrl -OutFile "adkwinpesetup.exe"
+
+          Write-Host "Installing Windows ADK (Deployment Tools)..."
+          Start-Process -FilePath ".\adksetup.exe" -ArgumentList "/quiet /installpath C:\ADK /features OptionId.DeploymentTools" -Wait
+
+          Write-Host "Installing Windows PE Addon..."
+          Start-Process -FilePath ".\adkwinpesetup.exe" -ArgumentList "/quiet /installpath C:\ADK /features OptionId.WindowsPreinstallationEnvironment" -Wait
+
+      - name: Build Windows PE ISO (amd64)
+        shell: cmd
         run: |
-          Write-Host "Installing Windows ADK (Deployment Tools only)..."
-          Start-Process -FilePath "adksetup.exe" -Wait -ArgumentList "/quiet /norestart /features Feature_DeploymentTools /installpath `"C:\ADK`""
-          
-          Write-Host "Installing Windows PE add-on..."
-          Start-Process -FilePath "adkwinpesetup.exe" -Wait -ArgumentList "/quiet /norestart"
+          echo Initializing Deployment and Imaging Tools Environment...
+          call "C:\ADK\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
 
-      # ADD THIS NEW STEP TO DUMP THE LOGS
-      - name: Show ADK Install Logs
-        if: always() # This ensures the step runs even if the previous one failed
-        shell: pwsh
-        run: |
-          Write-Host "Searching for ADK installation logs..."
-          $logFile = Get-ChildItem -Path $env:TEMP -Filter "ADK_*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if ($logFile) {
-            Write-Host "--- Displaying log file: $($logFile.FullName) ---"
-            Get-Content -Path $logFile.FullName
-            Write-Host "--- End of log file ---"
-          } else {
-            Write-Host "ADK log file not found in $env:TEMP."
-          }
+          echo Creating PE working directory...
+          call copype amd64 C:\WinPE_amd64
 
-      - name: Find ADK Installation Path (Full Scan)
-        shell: pwsh
-        run: |
-          Write-Host "Searching entire C: drive for DandISetEnv.bat..."
-          Get-ChildItem -Path "C:\ADK\Assessment and Deployment Kit\Deployment Tools" -Filter "DandISetEnv.bat" -Recurse -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
-          Get-ChildItem -Path "C:\ADK"
+          REM 如果需要在 PE 启动时执行脚本或注入驱动，可以在此挂载 boot.wim 操作
+          REM 示例：Dism /Mount-Image /ImageFile:C:\WinPE_amd64\media\sources\boot.wim /index:1 /MountDir:C:\WinPE_amd64\mount
 
-      - name: Create WinPE ISO (PowerShell)
-        shell: pwsh
-        run: |
-          Write-Host "Setting up Deployment and Imaging Tools Environment..."
-          # The PowerShell way to make tools available is to add their directory to the PATH.
-          $adkToolsPath = "C:\ADK\Assessment and Deployment Kit\Deployment Tools"
-          $env:Path = "$adkToolsPath;$env:Path"
-          
-          Write-Host "Creating WinPE working directory for amd64..."
-          # PowerShell can execute .cmd files directly.
-          copype.cmd amd64 C:\WinPE_amd64
-          
-          Write-Host "Creating WinPE ISO..."
-          MakeWinPEMedia.cmd /iso C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
+          echo Generating bootable ISO...
+          call MakeWinPEMedia /iso C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
 
-      - name: Upload WinPE ISO Artifact
+      - name: Upload ISO as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WinPE-ISO-amd64
+          name: WinPE-x64-ISO
           path: C:\WinPE_amd64\WinPE_amd64.iso
+          retention-days: 7
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "winpe-${{ github.run_number }}"
+          name: "Windows PE Build ${{ github.run_number }}"
+          files: C:\WinPE_amd64\WinPE_amd64.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
