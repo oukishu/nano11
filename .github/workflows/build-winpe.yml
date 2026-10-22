@@ -12,9 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install ADK and WinPE add-on
+      - name: Install ADK (Deployment Tools only) + WinPE add-on
         shell: pwsh
-        run: choco install windows-adk windows-adk-winpe -y --no-progress
+        env:
+          # 从 https://learn.microsoft.com/en-us/windows-hardware/get-started/adk-install
+          # 复制 "Download the Windows ADK" 和 "Download the Windows PE add-on" 的链接
+          ADK_URL: https://go.microsoft.com/fwlink/?linkid=2289980
+          WINPE_URL: https://go.microsoft.com/fwlink/?linkid=2289981
+        run: |
+          Invoke-WebRequest $env:ADK_URL -OutFile adksetup.exe
+          Invoke-WebRequest $env:WINPE_URL -OutFile adkwinpesetup.exe
+
+          Start-Process .\adksetup.exe -Wait -ArgumentList '/features','OptionId.DeploymentTools','/quiet','/norestart','/ceip','off'
+          Start-Process .\adkwinpesetup.exe -Wait -ArgumentList '/features','OptionId.WindowsPreinstallationEnvironment','/quiet','/norestart','/ceip','off'
 
       - name: Build WinPE ISO
         shell: cmd
