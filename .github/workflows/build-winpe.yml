@@ -1,55 +1,27 @@
-name: Build and Release Windows PE ISO
+name: Build WinPE ISO
 
 on:
-  workflow_dispatch: # 支持手动点击运行
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build-pe:
+  build:
     runs-on: windows-latest
-    permissions:
-      contents: write # 发布 Release 权限
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Download & Install Windows ADK and WinPE Addon
-        shell: powershell
-        run: |
-          Write-Host "Downloading ADK & WinPE Addon..."
-          $adkUrl = "https://go.microsoft.com/fwlink/?linkid=2271337"
-          $winpeUrl = "https://go.microsoft.com/fwlink/?linkid=2271338"
+      - name: Install ADK and WinPE add-on
+        shell: pwsh
+        run: choco install windows-adk windows-adk-winpe -y --no-progress
 
-          Invoke-WebRequest -Uri $adkUrl -OutFile "adksetup.exe"
-          Invoke-WebRequest -Uri $winpeUrl -OutFile "adkwinpesetup.exe"
-
-          Write-Host "Installing Windows ADK (Deployment Tools)..."
-          Start-Process -FilePath ".\adksetup.exe" -ArgumentList "/quiet /installpath C:\ADK /features OptionId.DeploymentTools" -Wait
-
-          Write-Host "Installing Windows PE Addon..."
-          Start-Process -FilePath ".\adkwinpesetup.exe" -ArgumentList "/quiet /installpath C:\ADK /features OptionId.WindowsPreinstallationEnvironment" -Wait
-
-      - name: Build Windows PE ISO (amd64)
+      - name: Build WinPE ISO
         shell: cmd
         run: |
-          echo Initializing Deployment and Imaging Tools Environment...
-          call "C:\ADK\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
-
-          echo Creating PE working directory...
-          call copype amd64 C:\WinPE_amd64
-
-          REM 如果需要在 PE 启动时执行脚本或注入驱动，可以在此挂载 boot.wim 操作
-          REM 示例：Dism /Mount-Image /ImageFile:C:\WinPE_amd64\media\sources\boot.wim /index:1 /MountDir:C:\WinPE_amd64\mount
-
-          echo Generating bootable ISO...
-          call MakeWinPEMedia /iso C:\WinPE_amd64 C:\WinPE_amd64\WinPE_amd64.iso
-
-      - name: Upload ISO as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: WinPE-x64-ISO
-          path: C:\WinPE_amd64\WinPE_amd64.iso
-          retention-days: 7
+          call "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
+          copype amd64 C:\WinPE_amd64
+          makewinpemedia /iso C:\WinPE_amd64 C:\WinPE_amd64.iso
 
       - name: Create GitHub Release
         if: github.ref == 'refs/heads/main'
