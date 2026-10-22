@@ -39,6 +39,6 @@ jobs:
         with:
           tag_name: "winpe-${{ github.run_number }}"
           name: "Windows PE Build ${{ github.run_number }}"
-          files: C:\WinPE_amd64\WinPE_amd64.iso
+          files: C:\WinPE_amd64.iso
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
