@@ -535,9 +535,9 @@ Remove-Item -Path $newBootWimPath -Force
 Rename-Item -Path $finalBootWimPath -NewName "boot.wim"
 
 Clear-Host
-Write-Host "Exporting final image to highly compressed ESD format..."
-& dism /Export-Image /SourceImageFile:"$mainOSdrive\nano11\sources\install.wim" /SourceIndex:1 /DestinationImageFile:"$mainOSdrive\nano11\sources\install.esd" /Compress:recovery
-Remove-Item "$mainOSdrive\nano11\sources\install.wim"  2>&1
+Write-Host "Exporting final image to nano11.wim..."
+Remove-Item "$PSScriptRoot\nano11.wim" -Force -ErrorAction SilentlyContinue
+& dism /Export-Image /SourceImageFile:"$mainOSdrive\nano11\sources\install.wim" /SourceIndex:1 /DestinationImageFile:"$PSScriptRoot\nano11.wim" /Compress:max
 
 Write-Host "Performing final cleanup of installation folder root..."
 $isoRoot = "$mainOSDrive\nano11"
