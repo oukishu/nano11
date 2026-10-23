@@ -37,8 +37,20 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\DandISetEnv.bat"
-          copype amd64 C:\WinPE_amd64
-          MakeWinPEMedia /ISO C:\WinPE_amd64 C:\WinPE_amd64\WinPE_x64.iso
+          if errorlevel 1 exit /b 1
+          call copype amd64 C:\WinPE_amd64
+          if errorlevel 1 exit /b 1
+          call MakeWinPEMedia /ISO C:\WinPE_amd64 C:\WinPE_amd64\WinPE_x64.iso
+          if errorlevel 1 (
+            echo makewinpemedia failed
+            dir C:\WinPE_amd64
+            exit /b 1
+          )
+          if not exist C:\WinPE_out.iso (
+            echo ISO not created
+            dir C:\
+            exit /b 1
+          )
 
       - name: Copy ISO into workspace
         shell: pwsh
