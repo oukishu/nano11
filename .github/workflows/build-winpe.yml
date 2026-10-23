@@ -48,7 +48,7 @@ jobs:
           )
           if not exist C:\WinPE_amd64\WinPE_x64.iso (
             echo ISO not created
-            dir C:\
+            dir C:\WinPE_amd64
             exit /b 1
           )
 
