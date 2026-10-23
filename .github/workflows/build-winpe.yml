@@ -40,11 +40,15 @@ jobs:
           copype amd64 C:\WinPE_amd64
           MakeWinPEMedia /ISO C:\WinPE_amd64 C:\WinPE_amd64\WinPE_x64.iso
 
+      - name: Copy ISO into workspace
+        shell: pwsh
+        run: Copy-Item C:\WinPE_amd64\WinPE_x64.iso "$env:GITHUB_WORKSPACE\WinPE_amd64.iso"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "winpe-${{ steps.meta.outputs.tag }}"
           name: "Windows PE Build ${{ steps.meta.outputs.tag }}"
           body: "Windows PE (amd64) ISO built by GitHub Actions."
-          files: C:\WinPE_amd64\WinPE_x64.iso
+          files: WinPE_x64.iso
           fail_on_unmatched_files: true
