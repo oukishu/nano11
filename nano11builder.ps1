@@ -43,7 +43,7 @@ New-Item -ItemType Directory -Force -Path "$mainOSDrive\nano11\sources"
 $DriveLetter = Read-Host "Please enter the drive letter for the Windows 11 image"
 $DriveLetter = $DriveLetter + ":"
 
-if ((Test-Path "$DriveLetter\sources\boot.wim") -eq $false -or (Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
+if ((Test-Path "$DriveLetter\sources\install.wim") -eq $false) {
     if ((Test-Path "$DriveLetter\sources\install.esd") -eq $true) {
         Write-Host "Found install.esd, converting to install.wim..."
         &  'dism' '/English' "/Get-WimInfo" "/wimfile:$DriveLetter\sources\install.esd"
@@ -488,64 +488,11 @@ Write-Host "Cleaning up and unmounting install.wim..."
 Remove-Item -Path "$mainOSDrive\nano11\sources\install.wim" -Force 
 Rename-Item -Path "$mainOSDrive\nano11\sources\install2.wim" -NewName "install.wim" 
 
-Write-Host "Shrinking boot.wim..."
-$bootWimPath = "$($env:SystemDrive)\nano11\sources\boot.wim" 
-Write-Host "Taking ownership of $bootWimPath..."
-& takeown "/F" $bootWimPath
-& icacls $bootWimPath "/grant" "$($adminGroup.Value):(F)"
-try {
-    Set-ItemProperty -Path $bootWimPath -Name IsReadOnly -Value $false -ErrorAction Stop
-} catch {
-}
-Write-Host "Exporting modified setup image (index 2) from boot.wim..."
-$newBootWimPath = "$($env:SystemDrive)\nano11\sources\boot_new.wim"
-$finalBootWimPath = "$($env:SystemDrive)\nano11\sources\boot_final.wim"
-& 'dism' '/English' '/Export-Image' "/SourceImageFile:$bootWimPath" '/SourceIndex:2' "/DestinationImageFile:$newBootWimPath"
-& 'dism' '/English' '/mount-image' "/imagefile:$newbootWimPath" '/index:1' "/mountdir:$scratchDir"
-reg load HKLM\zDEFAULT $ScratchDisk\scratchdir\Windows\System32\config\default | Out-Null
-reg load HKLM\zNTUSER $ScratchDisk\scratchdir\Users\Default\ntuser.dat | Out-Null
-reg load HKLM\zSOFTWARE $ScratchDisk\scratchdir\Windows\System32\config\SOFTWARE | Out-Null
-reg load HKLM\zSYSTEM $ScratchDisk\scratchdir\Windows\System32\config\SYSTEM | Out-Null
-Write-Host "Bypassing system requirements(on the system image):"
-& 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zDEFAULT\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV2' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zNTUSER\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV1' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zNTUSER\Control Panel\UnsupportedHardwareNotificationCache' '/v' 'SV2' '/t' 'REG_DWORD' '/d' '0' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassCPUCheck' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassRAMCheck' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassSecureBootCheck' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassStorageCheck' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\LabConfig' '/v' 'BypassTPMCheck' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-& 'reg' 'add' 'HKLM\zSYSTEM\Setup\MoSetup' '/v' 'AllowUpgradesWithUnsupportedTPMOrCPU' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-Write-Host "Disabling BitLocker Device Encryption"
-& 'reg' 'add' 'HKLM\zSYSTEM\ControlSet001\Control\BitLocker' '/v' 'PreventDeviceEncryption' '/t' 'REG_DWORD' '/d' '1' '/f' | Out-Null
-Write-Host "Tweaking complete!"
-Write-Host "Unmounting Registry..."
-reg unload HKLM\zNTUSER
-reg unload HKLM\zDEFAULT
-reg unload HKLM\zSOFTWARE
-reg unload HKLM\zSYSTEM >null
-Start-Sleep -Seconds 10
-& 'dism' '/English' '/unmount-image' "/mountdir:$scratchDir" '/commit'
-& takeown "/F" $bootWimPath
-& icacls $bootWimPath "/grant" "$($adminGroup.Value):(F)"
-Remove-Item -Path $bootWimPath -Force
-& 'dism' '/English' '/Export-Image' "/SourceImageFile:$newBootWimPath" '/SourceIndex:1' "/DestinationImageFile:$finalBootWimPath" '/compress:max'
-Remove-Item -Path $newBootWimPath -Force
-Rename-Item -Path $finalBootWimPath -NewName "boot.wim"
 
 Clear-Host
 Write-Host "Exporting final image to nano11.wim..."
 Remove-Item "$PSScriptRoot\nano11.wim" -Force -ErrorAction SilentlyContinue
 & dism /Export-Image /SourceImageFile:"$mainOSdrive\nano11\sources\install.wim" /SourceIndex:1 /DestinationImageFile:"$PSScriptRoot\nano11.wim" /Compress:max
-
-Write-Host "Performing final cleanup of installation folder root..."
-$isoRoot = "$mainOSDrive\nano11"
-$keepList = @("boot", "efi", "sources", "bootmgr", "bootmgr.efi", "setup.exe", "autounattend.xml")
-Get-ChildItem -Path $isoRoot | Where-Object { $_.Name -notin $keepList } | ForEach-Object {
-    Write-Host "Removing non-essential file/folder from ISO root: $($_.Name)"
-    Remove-Item -Path $_.FullName -Recurse -Force
-}
 
 Write-Host "Creation completed! Your image is named nano11.wim"
 Read-Host "Press Enter to perform cleanup and exit."
