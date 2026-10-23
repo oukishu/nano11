@@ -547,12 +547,7 @@ Get-ChildItem -Path $isoRoot | Where-Object { $_.Name -notin $keepList } | ForEa
     Remove-Item -Path $_.FullName -Recurse -Force
 }
 
-Write-Host "Creating bootable ISO image..."
-$OSCDIMG = "$PSScriptRoot\oscdimg.exe"
-if (-not (Test-Path $OSCDIMG)) { $url = "https://msdl.microsoft.com/download/symbols/oscdimg.exe/3D44737265000/oscdimg.exe"; Invoke-WebRequest -Uri $url -OutFile $OSCDIMG }
-& "$OSCDIMG" '-m' '-o' '-u2' '-udfver102' "-bootdata:2#p0,e,b$mainOSdrive\nano11\boot\etfsboot.com#pEF,e,b$mainOSdrive\nano11\efi\microsoft\boot\efisys.bin" "$mainOSdrive\nano11" "$PSScriptRoot\nano11.iso"
-
-Write-Host "Creation completed! Your ISO is named nano11.iso"
+Write-Host "Creation completed! Your image is named nano11.wim"
 Read-Host "Press Enter to perform cleanup and exit."
 & 'dism' '/English' '/unmount-image' "/mountdir:$scratchDir" '/discard'
 Remove-Item -Path "$mainOSdrive\nano11" -Recurse -Force 
