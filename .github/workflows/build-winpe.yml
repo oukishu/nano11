@@ -62,5 +62,5 @@ jobs:
           tag_name: "winpe-${{ steps.meta.outputs.tag }}"
           name: "Windows PE Build ${{ steps.meta.outputs.tag }}"
           body: "Windows PE (amd64) ISO built by GitHub Actions."
-          files: WinPE_x64.iso
+          files: WinPE_amd64.iso
           fail_on_unmatched_files: true
